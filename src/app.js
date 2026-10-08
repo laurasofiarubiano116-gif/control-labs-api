@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 
+const errorHandler = require('./middlewares/errorHandler');
 const loanRoutes = require('./routes/loanRoutes');
 const authRoutes = require('./routes/authRoutes');
 
@@ -20,5 +21,8 @@ app.get('/api/v1/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+
+app.use(errorHandler);
 
 module.exports = app;
