@@ -16,6 +16,7 @@ class LoanService {
       'nombreGuardaEntrega'
     ];
 
+    // Validar campos obligatorios
     const missingFields = requiredFields.filter(
       field =>
         data[field] === undefined ||
@@ -26,6 +27,51 @@ class LoanService {
     if (missingFields.length > 0) {
       const error = new Error(
         `Faltan campos obligatorios: ${missingFields.join(', ')}`
+      );
+
+      error.statusCode = 400;
+
+      throw error;
+    }
+
+    // Campos que deben ser números
+    const numericFields = [
+      'numeroPC',
+      'mouse',
+      'teclados',
+      'cargador',
+      'numeroTVs',
+      'controlTV'
+    ];
+
+    for (const field of numericFields) {
+      if (!Number.isInteger(Number(data[field]))) {
+        const error = new Error(
+          `El campo ${field} debe ser un número entero`
+        );
+
+        error.statusCode = 400;
+
+        throw error;
+      }
+
+      if (Number(data[field]) < 0) {
+        const error = new Error(
+          `El campo ${field} no puede ser negativo`
+        );
+
+        error.statusCode = 400;
+
+        throw error;
+      }
+    }
+
+    // Validar teléfono
+    const telefono = String(data.telefono).trim();
+
+    if (!/^\d{7,10}$/.test(telefono)) {
+      const error = new Error(
+        'El teléfono debe contener entre 7 y 10 dígitos'
       );
 
       error.statusCode = 400;
