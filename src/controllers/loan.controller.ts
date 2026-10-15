@@ -1,3 +1,4 @@
+
 import { Request, Response } from 'express';
 import loanService from '../services/loan.service';
 
@@ -39,9 +40,48 @@ class LoanController {
     }
   }
 
+  getLoansByFilter(req: Request, res: Response) {
+    try {
+      const room =
+        typeof req.query.room === 'string'
+          ? req.query.room
+          : undefined;
+
+      const startDate =
+        typeof req.query.startDate === 'string'
+          ? req.query.startDate
+          : undefined;
+
+      const endDate =
+        typeof req.query.endDate === 'string'
+          ? req.query.endDate
+          : undefined;
+
+      const loans = loanService.getLoansByFilter({
+        room,
+        startDate,
+        endDate
+      });
+
+      return res.status(200).json({
+        status: 'success',
+        data: loans
+      });
+    } catch (error: unknown) {
+      const err = error as Error & { statusCode?: number };
+
+      return res.status(err.statusCode || 500).json({
+        status: 'error',
+        message: err.message || 'Error interno del servidor'
+      });
+    }
+  }
+
   getLoanById(req: Request, res: Response) {
     try {
-      const loan = loanService.getLoanById(String(req.params.id));
+      const loan = loanService.getLoanById(
+        String(req.params.id)
+      );
 
       if (!loan) {
         return res.status(404).json({
@@ -66,7 +106,9 @@ class LoanController {
 
   acceptLoan(req: Request, res: Response) {
     try {
-      const loan = loanService.acceptLoan(String(req.params.id));
+      const loan = loanService.acceptLoan(
+        String(req.params.id)
+      );
 
       return res.status(200).json({
         status: 'success',

@@ -1,7 +1,14 @@
+
 import loanRepository from '../repositories/loan.repository';
 import { LoanData } from '../models/loan.model';
 
 type LoanInput = Omit<LoanData, 'id'>;
+
+interface LoanFilters {
+  room?: string;
+  startDate?: string;
+  endDate?: string;
+}
 
 class LoanService {
   createLoan(data: LoanInput) {
@@ -36,20 +43,21 @@ class LoanService {
     }
 
     const numericFields: (
-  | 'numeroPC'
-  | 'mouse'
-  | 'teclados'
-  | 'cargador'
-  | 'numeroTVs'
-  | 'controlTV'
-)[] = [
-  'numeroPC',
-  'mouse',
-  'teclados',
-  'cargador',
-  'numeroTVs',
-  'controlTV'
-];
+      | 'numeroPC'
+      | 'mouse'
+      | 'teclados'
+      | 'cargador'
+      | 'numeroTVs'
+      | 'controlTV'
+    )[] = [
+      'numeroPC',
+      'mouse',
+      'teclados',
+      'cargador',
+      'numeroTVs',
+      'controlTV'
+    ];
+
     for (const field of numericFields) {
       const value = Number(data[field]);
 
@@ -86,6 +94,57 @@ class LoanService {
 
   getAllLoans() {
     return loanRepository.findAll();
+  }
+
+  getLoansByFilter(filters: LoanFilters) {
+    const { room, startDate, endDate } = filters;
+
+    if (startDate && Number.isNaN(Date.parse(startDate))) {
+      throw Object.assign(
+        new Error('La fecha inicial no es válida'),
+        { statusCode: 400 }
+      );
+    }
+
+    if (endDate && Number.isNaN(Date.parse(endDate))) {
+      throw Object.assign(
+        new Error('La fecha final no es válida'),
+        { statusCode: 400 }
+      );
+    }
+
+    if (startDate && endDate && startDate > endDate) {
+      throw Object.assign(
+        new Error('La fecha inicial no puede ser posterior a la fecha final'),
+        { statusCode: 400 }
+      );
+    }
+
+    const start = startDate
+      ? new Date(startDate).getTime()
+      : undefined;
+
+    const end = endDate
+      ? new Date(`${endDate}T23:59:59.999`).getTime()
+      : undefined;
+
+    return loanRepository.findAll().filter((loan) => {
+      const matchesRoom =
+        !room ||
+        loan.aula.toLowerCase().includes(room.trim().toLowerCase());
+
+      const receivedTime = new Date(
+        loan.fechaHoraRecibido
+      ).getTime();
+
+      const matchesStart =
+        start === undefined || receivedTime >= start;
+
+      const matchesEnd =
+        end === undefined || receivedTime <= end;
+
+      return matchesRoom && matchesStart && matchesEnd;
+    });
   }
 
   getLoanById(id: string) {

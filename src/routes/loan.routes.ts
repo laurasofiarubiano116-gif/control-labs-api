@@ -1,3 +1,4 @@
+
 import { Router } from 'express';
 import loanController from '../controllers/loan.controller';
 import {
@@ -7,7 +8,16 @@ import {
 
 const router = Router();
 
-// Registrar préstamo: solo GUARDA
+// Buscar préstamos por salón y rango de fechas.
+// Debe declararse antes de /:id.
+router.get(
+  '/search',
+  authenticateToken,
+  authorizeRoles('ADMIN', 'GUARDA', 'INSTRUCTOR'),
+  loanController.getLoansByFilter
+);
+
+// Registrar préstamo: solo GUARDA.
 router.post(
   '/',
   authenticateToken,
@@ -15,7 +25,7 @@ router.post(
   loanController.createLoan
 );
 
-// Consultar todos los préstamos
+// Consultar todos los préstamos.
 router.get(
   '/',
   authenticateToken,
@@ -23,7 +33,7 @@ router.get(
   loanController.getAllLoans
 );
 
-// Consultar un préstamo por ID
+// Consultar préstamo por ID.
 router.get(
   '/:id',
   authenticateToken,
@@ -31,7 +41,7 @@ router.get(
   loanController.getLoanById
 );
 
-// Aceptar préstamo: solo INSTRUCTOR
+// Aceptar préstamo: solo INSTRUCTOR.
 router.put(
   '/:id/accept',
   authenticateToken,
