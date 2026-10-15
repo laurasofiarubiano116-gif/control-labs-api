@@ -1,7 +1,8 @@
-const authService = require('../services/authService');
+import { Request, Response } from 'express';
+import authService from '../services/auth.service';
 
 class AuthController {
-  login(req, res) {
+  login(req: Request, res: Response) {
     try {
       const { email, password } = req.body;
 
@@ -19,13 +20,15 @@ class AuthController {
         message: 'Inicio de sesión exitoso',
         data: result
       });
-    } catch (error) {
-      return res.status(error.statusCode || 500).json({
+    } catch (error: unknown) {
+      const err = error as Error & { statusCode?: number };
+
+      return res.status(err.statusCode || 500).json({
         status: 'error',
-        message: error.message
+        message: err.message || 'Error interno del servidor'
       });
     }
   }
 }
 
-module.exports = new AuthController();
+export default new AuthController();

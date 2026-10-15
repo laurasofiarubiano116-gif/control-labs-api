@@ -1,14 +1,13 @@
-const express = require('express');
-
-const loanController = require('../controllers/loanController');
-const {
+import { Router } from 'express';
+import loanController from '../controllers/loan.controller';
+import {
   authenticateToken,
   authorizeRoles
-} = require('../middlewares/authMiddleware');
+} from '../middlewares/auth.middleware';
 
-const router = express.Router();
+const router = Router();
 
-// Registrar préstamo → solo GUARDA
+// Registrar préstamo: solo GUARDA
 router.post(
   '/',
   authenticateToken,
@@ -16,7 +15,7 @@ router.post(
   loanController.createLoan
 );
 
-// Consultar todos los préstamos → ADMIN, GUARDA e INSTRUCTOR
+// Consultar todos los préstamos
 router.get(
   '/',
   authenticateToken,
@@ -24,7 +23,7 @@ router.get(
   loanController.getAllLoans
 );
 
-// Consultar un préstamo → ADMIN, GUARDA e INSTRUCTOR
+// Consultar un préstamo por ID
 router.get(
   '/:id',
   authenticateToken,
@@ -32,7 +31,7 @@ router.get(
   loanController.getLoanById
 );
 
-// Aceptar préstamo → solo INSTRUCTOR
+// Aceptar préstamo: solo INSTRUCTOR
 router.put(
   '/:id/accept',
   authenticateToken,
@@ -40,4 +39,4 @@ router.put(
   loanController.acceptLoan
 );
 
-module.exports = router;
+export default router;

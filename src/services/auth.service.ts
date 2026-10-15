@@ -1,6 +1,16 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
-const users = [
+type UserRole = 'ADMIN' | 'GUARDA' | 'INSTRUCTOR';
+
+interface User {
+  id: number;
+  nombre: string;
+  email: string;
+  password: string;
+  rol: UserRole;
+}
+
+const users: User[] = [
   {
     id: 1,
     nombre: 'Administrador',
@@ -25,15 +35,25 @@ const users = [
 ];
 
 class AuthService {
-  login(email, password) {
+  login(email: string, password: string) {
     const user = users.find(
-      user => user.email === email && user.password === password
+      (item) => item.email === email && item.password === password
     );
 
     if (!user) {
-      const error = new Error('Correo o contraseña incorrectos');
-      error.statusCode = 401;
-      throw error;
+      throw Object.assign(
+        new Error('Correo o contraseña incorrectos'),
+        { statusCode: 401 }
+      );
+    }
+
+    const secret = process.env.JWT_SECRET;
+
+    if (!secret) {
+      throw Object.assign(
+        new Error('La configuración JWT no está disponible'),
+        { statusCode: 500 }
+      );
     }
 
     const token = jwt.sign(
@@ -42,10 +62,8 @@ class AuthService {
         email: user.email,
         rol: user.rol
       },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: '2h'
-      }
+      secret,
+      { expiresIn: '2h' }
     );
 
     return {
@@ -60,4 +78,4 @@ class AuthService {
   }
 }
 
-module.exports = new AuthService();
+export default new AuthService();
