@@ -1,52 +1,95 @@
-import { Request, Response } from 'express';
+ï»¿import { Request, Response, NextFunction } from 'express';
 import * as loanService from '../services/LoanService';
-export const obtenerPrestamos = async (_req: Request, res: Response): Promise<void> => {
+import {
+  CrearPrestamoDTO,
+  FiltrosHistorialDTO
+} from '../dtos/loan.dto';
+
+export const obtenerPrestamos = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const prestamos = await loanService.obtenerPrestamos();
-    res.status(200).json({ status: 'success', data: prestamos });
+
+    res.status(200).json({
+      status: 'success',
+      data: prestamos
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ status: 'error', message: 'Error al obtener los préstamos' });
+    next(error);
   }
 };
-export const crearPrestamo = async (req: Request, res: Response): Promise<void> => {
+
+export const crearPrestamo = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const nuevoPrestamo = await loanService.crearPrestamo(req.body);
-    res.status(201).json({ status: 'success', message: 'Préstamo registrado correctamente', data: nuevoPrestamo });
+    const datos = req.body as CrearPrestamoDTO;
+    const nuevoPrestamo = await loanService.crearPrestamo(datos);
+
+    res.status(201).json({
+      status: 'success',
+      message: 'PrÃ©stamo registrado correctamente',
+      data: nuevoPrestamo
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ status: 'error', message: 'Error al registrar el préstamo' });
+    next(error);
   }
 };
-export const aceptarPrestamo = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+
+export const aceptarPrestamo = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) {
-      res.status(400).json({ status: 'error', message: 'ID de préstamo inválido' });
-      return;
-    }
     const prestamo = await loanService.aceptarPrestamo(id);
+
     if (!prestamo) {
-      res.status(404).json({ status: 'error', message: 'Préstamo no encontrado' });
+      res.status(404).json({
+        status: 'error',
+        message: 'PrÃ©stamo no encontrado'
+      });
       return;
     }
-    res.status(200).json({ status: 'success', message: 'Préstamo aceptado correctamente', data: prestamo });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'PrÃ©stamo aceptado correctamente',
+      data: prestamo
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ status: 'error', message: 'Error al aceptar el préstamo' });
+    next(error);
   }
 };
-export const obtenerHistorial = async (req: Request, res: Response): Promise<void> => {
+
+export const obtenerHistorial = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const obtenerTexto = (valor: unknown): string | undefined => typeof valor === 'string' ? valor : undefined;
-    const historial = await loanService.obtenerHistorial({
+    const obtenerTexto = (valor: unknown): string | undefined =>
+      typeof valor === 'string' ? valor : undefined;
+
+    const filtros: FiltrosHistorialDTO = {
       room: obtenerTexto(req.query.room),
       startDate: obtenerTexto(req.query.startDate),
       endDate: obtenerTexto(req.query.endDate)
+    };
+
+    const historial = await loanService.obtenerHistorial(filtros);
+
+    res.status(200).json({
+      status: 'success',
+      data: historial
     });
-    res.status(200).json({ status: 'success', data: historial });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ status: 'error', message: 'Error al obtener el historial' });
+    next(error);
   }
 };
