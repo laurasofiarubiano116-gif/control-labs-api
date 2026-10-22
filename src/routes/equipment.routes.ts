@@ -1,15 +1,11 @@
-﻿import { Router } from 'express';
-import {
-  obtenerEquipos,
-  crearEquipo,
-  actualizarEquipo
-} from '../controllers/equipment.controller';
-import { validarId } from '../middlewares/validateId.middleware';
+import { Router } from 'express';
+import { EquipmentController } from '../controllers/equipment.controller';
+import { validateEquipmentPayload } from '../middlewares/validateEquipment.middleware';
 
 const router = Router();
 
-router.get('/', obtenerEquipos);
-router.post('/', crearEquipo);
-router.patch('/:id', validarId, actualizarEquipo);
+router.post('/', validateEquipmentPayload, EquipmentController.createEquipment);
+router.get('/', EquipmentController.getEquipment);
+router.patch('/:id', EquipmentController.updateEquipment);
 
 export default router;
