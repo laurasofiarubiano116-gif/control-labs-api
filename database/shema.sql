@@ -1,0 +1,53 @@
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) NOT NULL UNIQUE,
+  nombre VARCHAR(150) NOT NULL,
+  rol VARCHAR(20) NOT NULL CHECK (rol IN ('ADMIN','GUARDA','INSTRUCTOR')),
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE rooms (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre VARCHAR(100) NOT NULL UNIQUE,
+  bloque VARCHAR(50) NOT NULL,
+  capacidad_pcs INTEGER NOT NULL CHECK (capacidad_pcs >= 0),
+  estado VARCHAR(20) NOT NULL DEFAULT 'OPERATIVO'
+    CHECK (estado IN ('OPERATIVO','MANTENIMIENTO','INACTIVO'))
+);
+CREATE TABLE equipment (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  placa_sena VARCHAR(50) NOT NULL UNIQUE,
+  codigo_activo VARCHAR(100) NOT NULL UNIQUE,
+  tipo VARCHAR(50) NOT NULL CHECK (tipo IN ('COMPUTADOR','MOUSE','TECLADO','CARGADOR','TELEVISOR','CONTROL_TV')),
+  room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE RESTRICT,
+  estado VARCHAR(20) NOT NULL DEFAULT 'OPERATIVO'
+    CHECK (estado IN ('OPERATIVO','MANTENIMIENTO','FUERA_DE_SERVICIO'))
+);
+CREATE TABLE loans (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE RESTRICT,
+  instructor_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  guarda_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  numero_pc INTEGER NOT NULL CHECK (numero_pc > 0),
+  estado VARCHAR(24) NOT NULL DEFAULT 'PENDIENTE_APROBACION'
+    CHECK (estado IN ('PENDIENTE_APROBACION','APROBADO_Y_FIRMADO')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  accepted_at TIMESTAMPTZ,
+  CHECK ((estado = 'PENDIENTE_APROBACION' AND accepted_at IS NULL)
+      OR (estado = 'APROBADO_Y_FIRMADO' AND accepted_at IS NOT NULL))
+);
+CREATE TABLE incidents (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  equipment_id UUID NOT NULL REFERENCES equipment(id) ON DELETE RESTRICT,
+  reported_by UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  descripcion TEXT NOT NULL,
+  prioridad VARCHAR(10) NOT NULL CHECK (prioridad IN ('BAJA','MEDIA','ALTA')),
+  estado VARCHAR(16) NOT NULL DEFAULT 'PENDIENTE'
+    CHECK (estado IN ('PENDIENTE','EN_PROCESO','RESUELTA')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_equipment_room ON equipment(room_id);
+CREATE INDEX idx_loans_room_created ON loans(room_id, created_at DESC);
+CREATE INDEX idx_incidents_equipment_status ON incidents(equipment_id, estado);
+-- Dashboard: consulta derivada, sin tabla duplicada.
